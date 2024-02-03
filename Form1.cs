@@ -50,8 +50,14 @@ namespace WinFormsReadExcelTavetPhuKien
 
                 //Clear the rich text box
                 richTextBox1.Clear();
-
-                this.ReadExcel(filePath);
+                try
+                {
+                    this.ReadExcel(filePath);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Co loi xay ra: \n {ex.Message}", "Error");
+                }
             }
         }
         private void ReadExcel(string filePath)
