@@ -39,6 +39,7 @@
         /// </summary>
         private void InitializeComponent()
         {
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
             button1 = new Button();
             richTextBox1 = new RichTextBox();
             comboBox1 = new ComboBox();
@@ -92,6 +93,7 @@
             Controls.Add(richTextBox1);
             Controls.Add(button1);
             ForeColor = Color.White;
+            Icon = (Icon)resources.GetObject("$this.Icon");
             Name = "Form1";
             Text = "Tool Xuất Tà vẹt Phụ kiện";
             Load += Form1_Load;

@@ -6,11 +6,11 @@
     <Nullable>enable</Nullable>
     <UseWindowsForms>true</UseWindowsForms>
     <ImplicitUsings>enable</ImplicitUsings>
-    <ApplicationIcon>over_above_pink_left_icon_261504.ico</ApplicationIcon>
+    <ApplicationIcon>icon-exe.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="over_above_pink_left_icon_261504.ico" />
+    <Content Include="icon-exe.ico" />
   </ItemGroup>
 
   <ItemGroup>

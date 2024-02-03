@@ -130,7 +130,7 @@ namespace WinFormsReadExcelTavetPhuKien
                     richTextBox1.Text = ($"Row {i} of total {rows} isnullRow \n");
                     break;
                 }
-                
+
                 if (typeTableVal == "tavet")
                 {
                     //value tavet
@@ -144,7 +144,7 @@ namespace WinFormsReadExcelTavetPhuKien
                     richTextBox1.Text = ($"Reading Row {i} of total {rows} \n");
                 }
 
-                
+
             }
             SheetResponse.Cells[3, 5, currentRow - 1, 6].Style.Numberformat.Format = $"K\\m 0. + 000#######";
             SheetResponse.Calculate();
@@ -211,7 +211,7 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 1].Value = currentRow - 2;
                 SheetResponse.Cells[currentRow, 2].Value = values[1];
                 SheetResponse.Cells[currentRow, 3].Value = values[2];
-                
+
                 SheetResponse.Cells[currentRow, 4].Value = values[5];
                 if (!string.IsNullOrEmpty(values[6]))
                 {
