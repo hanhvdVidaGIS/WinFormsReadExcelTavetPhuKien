@@ -49,7 +49,7 @@ namespace WinFormsReadExcelTavetPhuKien
 
 
                 //Clear the rich text box
-                richTextBox1.Clear();
+                //richTextBox1.Clear();
                 try
                 {
                     this.ReadExcel(filePath);
@@ -149,8 +149,6 @@ namespace WinFormsReadExcelTavetPhuKien
                     this.HandleQuantityPhukien(values, ref currentRow, ref SheetResponse);
                     richTextBox1.Text = ($"Reading Row {i} of total {rows} \n");
                 }
-
-
             }
             SheetResponse.Cells[3, 5, currentRow - 1, 6].Style.Numberformat.Format = $"K\\m 0. + 000#######";
             SheetResponse.Calculate();
