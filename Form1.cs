@@ -1,9 +1,11 @@
-﻿using System.Globalization;
+﻿using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Reflection.PortableExecutable;
 using Microsoft.Office.Interop.Excel;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
+using LicenseContext = OfficeOpenXml.LicenseContext;
 namespace WinFormsReadExcelTavetPhuKien
 {
     public partial class Form1 : Form
@@ -26,6 +28,7 @@ namespace WinFormsReadExcelTavetPhuKien
             comboBox1.Items.Add(item);
 
             comboBox1.SelectedIndex = 0;
+
         }
 
         private void button1_Click(object sender, EventArgs e)
@@ -42,14 +45,14 @@ namespace WinFormsReadExcelTavetPhuKien
                 //Get the file path
                 string filePath = openFileDialog.FileName;
 
-                //Display the file path in the text box
+                //Clear the rich text box
+                richTextBox1.Clear();
                 richTextBox1.Text = "Reading File...";
 
                 //reading excel
+                //backgroundWorker1.RunWorkerAsync(new { filePath });
 
 
-                //Clear the rich text box
-                //richTextBox1.Clear();
                 try
                 {
                     this.ReadExcel(filePath);
@@ -62,8 +65,8 @@ namespace WinFormsReadExcelTavetPhuKien
         }
         private void ReadExcel(string filePath)
         {
-            var typeTableVal = ((ComboboxItem)comboBox1.SelectedItem).Value as string;
-            var typeTableText = ((ComboboxItem)comboBox1.SelectedItem).Text as string;
+            //var typeTableVal = ((ComboboxItem)comboBox1.SelectedItem).Value as string;
+            //var typeTableText = ((ComboboxItem)comboBox1.SelectedItem).Text as string;
 
             FileInfo fileInfo = new FileInfo(filePath);
             //package read
@@ -72,12 +75,12 @@ namespace WinFormsReadExcelTavetPhuKien
 
             //package response
             ExcelPackage packageResponse = new ExcelPackage();
-            ExcelWorksheet SheetResponse = packageResponse.Workbook.Worksheets.Add(typeTableText ?? "Du lieu chuan hoa");
+            ExcelWorksheet SheetResponse = packageResponse.Workbook.Worksheets.Add("Phụ kiện và Tà vẹt");
 
-            //Chèn alias vào row 1 đàu tiên
-            for (int i = 1; i < 10; i++)
+            //Chèn alias, row_field_name vào row 1 đàu tiên
+            for (int i = 1; i < 13; i++)
             {
-                string textAlias = "";
+                string textAlias = "", field_name = "";
                 switch (i)
                 {
                     case 1:
@@ -85,29 +88,52 @@ namespace WinFormsReadExcelTavetPhuKien
                         break;
                     case 2:
                         textAlias = "Tuyến đường sắt";
+                        field_name = "tuyenduongsat";
                         break;
                     case 3:
                         textAlias = "Khu gian";
+                        field_name = "khugian-tenkhugian";
                         break;
                     case 4:
                         textAlias = "Tên cầu ray";
+                        field_name = "cauray";
                         break;
                     case 5:
                         textAlias = "Lý trình đầu (Km)";
+                        field_name = "diemlytrinhdau-kmlytrinh";
                         break;
                     case 6:
                         textAlias = "Lý trình cuối (Km)";
+                        field_name = "diemlytrinhcuoi-kmlytrinh";
                         break;
                     case 7:
-                        textAlias = typeTableVal == "tavet" ? "Loại tà vẹt đường sắt" : "Loại phụ kiện";
+                        //textAlias = typeTableVal == "tavet" ? "Loại tà vẹt đường sắt" : "Loại phụ kiện";
+                        textAlias = "Loại tà vẹt đường sắt";
+                        field_name = "loaitavetduongsat";
                         break;
                     case 8:
                         textAlias = "Số lượng (tốt)";
+                        field_name = "soluongtavet_tot";
                         break;
                     case 9:
                         textAlias = "Số lượng (xấu)";
+                        field_name = "soluongtavet_xau";
+                        break;
+                    case 10:
+                        textAlias = "Loại phụ kiện";
+                        field_name = "loaiphukien";
+                        break;
+                    case 11:
+                        textAlias = "Số lượng (tốt)";
+                        field_name = "soluongphukien_tot";
+                        break;
+                    case 12:
+                        textAlias = "Số lượng (xấu)";
+                        field_name = "soluongphukien_xau";
                         break;
                 }
+                var value_field_name = SheetResponse.Cells[1, i].RichText.Add(field_name);
+                value_field_name.Bold = true;
                 var value_alias = SheetResponse.Cells[2, i].RichText.Add(textAlias);
                 value_alias.Bold = true;
             }
@@ -134,26 +160,21 @@ namespace WinFormsReadExcelTavetPhuKien
                 if (isnullRow)
                 {
                     richTextBox1.Text = ($"Row {i} of total {rows} isnullRow \n");
-                    break;
+                    goto showProgress;
                 }
 
-                if (typeTableVal == "tavet")
-                {
-                    //value tavet
-                    this.HandleQuantityTavet(values, ref currentRow, ref SheetResponse);
-                    richTextBox1.Text = ($"Reading Row {i} of total {rows} \n");
-                }
-                else if (typeTableVal == "phukien")
-                {
-                    //value phukien
-                    this.HandleQuantityPhukien(values, ref currentRow, ref SheetResponse);
-                    richTextBox1.Text = ($"Reading Row {i} of total {rows} \n");
-                }
+                this.HandleQuantityTavetPhuKien(values, ref currentRow, ref SheetResponse);
+                richTextBox1.Text = $"Reading Row {i} of total {rows} \n";
+
+            showProgress:
+                var pecent = ((double)i / rows) * 100;
+                int pre = pecent < 1 ? 1 : (int)pecent;
+                backgroundWorker1.ReportProgress(pre);
             }
             SheetResponse.Cells[3, 5, currentRow - 1, 6].Style.Numberformat.Format = $"K\\m 0. + 000#######";
             SheetResponse.Calculate();
             SheetResponse.Cells[SheetResponse.Dimension.Address].AutoFitColumns();
-            using (ExcelRange Rng = SheetResponse.Cells[2, 1, 2, 9])
+            using (ExcelRange Rng = SheetResponse.Cells[2, 1, 2, 12])
             {
                 Rng.IsRichText = true;
                 Rng.Style.Fill.PatternType = ExcelFillStyle.Solid;
@@ -162,22 +183,21 @@ namespace WinFormsReadExcelTavetPhuKien
                 Rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
                 Rng.AutoFitColumns();
             }
-            using (ExcelRange Rng = SheetResponse.Cells[3, 1, currentRow - 1, 9])
-            {
-                Rng.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
-                Rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
-                Rng.AutoFitColumns();
-            }
-            using (ExcelRange Rng = SheetResponse.Cells[1, 1, currentRow - 1, 9])
+
+            using (ExcelRange Rng = SheetResponse.Cells[1, 1, currentRow - 1, 12])
             {
                 Rng.Style.Border.Top.Style = ExcelBorderStyle.Thin;
                 Rng.Style.Border.Left.Style = ExcelBorderStyle.Thin;
                 Rng.Style.Border.Right.Style = ExcelBorderStyle.Thin;
                 Rng.Style.Border.Bottom.Style = ExcelBorderStyle.Thin;
+                Rng.Style.HorizontalAlignment = ExcelHorizontalAlignment.Center;
+                Rng.Style.VerticalAlignment = ExcelVerticalAlignment.Center;
+                Rng.AutoFitColumns();
             }
             if (package != null) package.Dispose();
             richTextBox1.AppendText($"Successfully read file");
-            string excelName = $"{typeTableText}.{DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss")}"; //$"{typeTableText}.{DateTime.Now.Year}.{DateTime.Now.Month}.{DateTime.Now.Day}.{DateTime.Now.Hour}.{DateTime.Now.Minute}";
+            backgroundWorker1.ReportProgress(100);
+            string excelName = $"Tà vẹt Phụ kiện.{DateTime.Now.ToString("yyyy.MM.dd.HH.mm.ss")}"; //$"{typeTableText}.{DateTime.Now.Year}.{DateTime.Now.Month}.{DateTime.Now.Day}.{DateTime.Now.Hour}.{DateTime.Now.Minute}";
             SaveFileDialog saveFile = new SaveFileDialog();
             saveFile.Title = "Export Excel";
             saveFile.Filter = "Excel Files|*.xlsx;*.xls;*.xlsm";
@@ -194,8 +214,9 @@ namespace WinFormsReadExcelTavetPhuKien
                 }
             }
         }
-        private void HandleQuantityTavet(List<string> values, ref int currentRow, ref ExcelWorksheet SheetResponse)
+        private void HandleQuantityTavetPhuKien(List<string> values, ref int currentRow, ref ExcelWorksheet SheetResponse)
         {
+            //count tavet
             int.TryParse(values[9 - 1], out int countTavet_BTDUL_Tot);
             int.TryParse(values[10 - 1], out int countTavet_BTDUL_Xau);
             int.TryParse(values[15 - 1], out int countTavet_BT_Tot);
@@ -207,7 +228,31 @@ namespace WinFormsReadExcelTavetPhuKien
             int.TryParse(values[33 - 1], out int countTavet_COMPOSITE_Tot);
             int.TryParse(values[34 - 1], out int countTavet_COMPOSITE_Xau);
 
-            string typeTavet = "";
+            //count phu kien
+            int.TryParse(values[13 - 1], out int countPhukien_CC_BTDUL_Tot);
+            int.TryParse(values[14 - 1], out int countPhukien_CC_BTDUL_Xau);
+            int.TryParse(values[11 - 1], out int countPhukien_CDH_BTDUL_Tot);
+            int.TryParse(values[12 - 1], out int countPhukien_CDH_BTDUL_Xau);
+
+            int.TryParse(values[17 - 1], out int countPhukien_CC_BT_Tot);
+            int.TryParse(values[18 - 1], out int countPhukien_CC_BT_Xau);
+            int.TryParse(values[19 - 1], out int countPhukien_CDH_BT_Tot);
+            int.TryParse(values[20 - 1], out int countPhukien_CDH_BT_Xau);
+
+            int.TryParse(values[23 - 1], out int countPhukien_CC_SAT_Tot);
+            int.TryParse(values[24 - 1], out int countPhukien_CC_SAT_Xau);
+            int.TryParse(values[25 - 1], out int countPhukien_CDH_SAT_Tot);
+            int.TryParse(values[26 - 1], out int countPhukien_CDH_SAT_Xau);
+
+            int.TryParse(values[29 - 1], out int countPhukien_CC_GO_Tot);
+            int.TryParse(values[30 - 1], out int countPhukien_CC_GO_Xau);
+            int.TryParse(values[31 - 1], out int countPhukien_CDH_GO_Tot);
+            int.TryParse(values[32 - 1], out int countPhukien_CDH_GO_Xau);
+
+            int.TryParse(values[35 - 1], out int countPhukien_CDH_COMPOSITE_Tot);
+            int.TryParse(values[36 - 1], out int countPhukien_CDH_COMPOSITE_Xau);
+
+            string typeTavet = "", typePhukien = "";
             if (countTavet_BTDUL_Tot > 0 || countTavet_BTDUL_Xau > 0)
             {
                 typeTavet = "Tà vẹt bê tông dự ứng lực";
@@ -230,6 +275,24 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 7].Value = typeTavet;
                 SheetResponse.Cells[currentRow, 8].Value = countTavet_BTDUL_Tot;
                 SheetResponse.Cells[currentRow, 9].Value = countTavet_BTDUL_Xau;
+
+                //phu kien
+                if (countPhukien_CC_BTDUL_Tot > 0 || countPhukien_CC_BTDUL_Xau > 0)
+                {
+                    typePhukien = "Cóc cứng";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CC_BTDUL_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CC_BTDUL_Xau;
+                }
+                else if (countPhukien_CDH_BTDUL_Tot > 0 || countPhukien_CDH_BTDUL_Xau > 0)
+                {
+                    typePhukien = "Cóc đàn hồi";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CDH_BTDUL_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CDH_BTDUL_Xau;
+                }
 
                 currentRow++;
             }
@@ -256,6 +319,24 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 8].Value = countTavet_BT_Tot;
                 SheetResponse.Cells[currentRow, 9].Value = countTavet_BT_Xau;
 
+                //phu kien
+                if (countPhukien_CC_BT_Tot > 0 || countPhukien_CC_BT_Xau > 0)
+                {
+                    typePhukien = "Cóc cứng";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CC_BT_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CC_BT_Xau;
+                }
+                else if (countPhukien_CDH_BT_Tot > 0 || countPhukien_CDH_BT_Xau > 0)
+                {
+                    typePhukien = "Cóc đàn hồi";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CDH_BT_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CDH_BT_Xau;
+                }
+
                 currentRow++;
             }
             if (countTavet_SAT_Tot > 0 || countTavet_SAT_Tot > 0)
@@ -280,6 +361,24 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 7].Value = typeTavet;
                 SheetResponse.Cells[currentRow, 8].Value = countTavet_SAT_Tot;
                 SheetResponse.Cells[currentRow, 9].Value = countTavet_SAT_Tot;
+
+                //phu kien
+                if (countPhukien_CC_SAT_Tot > 0 || countPhukien_CC_SAT_Xau > 0)
+                {
+                    typePhukien = "Cóc cứng";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CC_SAT_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CC_SAT_Xau;
+                }
+                else if (countPhukien_CDH_SAT_Tot > 0 || countPhukien_CDH_SAT_Xau > 0)
+                {
+                    typePhukien = "Cóc đàn hồi";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CDH_SAT_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CDH_SAT_Xau;
+                }
 
                 currentRow++;
             }
@@ -306,6 +405,24 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 8].Value = countTavet_GO_Tot;
                 SheetResponse.Cells[currentRow, 9].Value = countTavet_GO_Xau;
 
+                //phu kien
+                if (countPhukien_CC_GO_Tot > 0 || countPhukien_CC_GO_Xau > 0)
+                {
+                    typePhukien = "Cóc cứng";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CC_GO_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CC_GO_Xau;
+                }
+                else if (countPhukien_CDH_GO_Tot > 0 || countPhukien_CDH_GO_Xau > 0)
+                {
+                    typePhukien = "Cóc đàn hồi";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CDH_GO_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CDH_GO_Xau;
+                }
+
                 currentRow++;
             }
             if (countTavet_COMPOSITE_Tot > 0 || countTavet_COMPOSITE_Xau > 0)
@@ -330,6 +447,16 @@ namespace WinFormsReadExcelTavetPhuKien
                 SheetResponse.Cells[currentRow, 7].Value = typeTavet;
                 SheetResponse.Cells[currentRow, 8].Value = countTavet_COMPOSITE_Tot;
                 SheetResponse.Cells[currentRow, 9].Value = countTavet_COMPOSITE_Xau;
+
+                //phu kien
+                if (countPhukien_CDH_COMPOSITE_Tot > 0 || countPhukien_CDH_COMPOSITE_Xau > 0)
+                {
+                    typePhukien = "Cóc đàn hồi";
+
+                    SheetResponse.Cells[currentRow, 10].Value = typePhukien;
+                    SheetResponse.Cells[currentRow, 11].Value = countPhukien_CDH_COMPOSITE_Tot;
+                    SheetResponse.Cells[currentRow, 12].Value = countPhukien_CDH_COMPOSITE_Xau;
+                }
 
                 currentRow++;
             }
@@ -417,10 +544,52 @@ namespace WinFormsReadExcelTavetPhuKien
             }
         }
 
+        void backgroundWorker1_DoWork(object sender, DoWorkEventArgs e)
+        {
+            //Thread.Sleep(100);
+            // object[] args = (object[])e.Argument;
+            // CustomType arg = (CustomType)e.Argument;
+            dynamic arg = (dynamic)e.Argument;
+
+            // Check for cancellation
+            if (backgroundWorker1.CancellationPending)
+            {
+                e.Cancel = true;
+                return;
+            }
+            else
+            {
+
+            }
+        }
+
+        private void backgroundWorker1_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            // Change the value of the ProgressBar to the BackgroundWorker progress.
+            progressBar1.Value = e.ProgressPercentage;
+            // Set the text.
+            //this.Text = e.ProgressPercentage.ToString();
+            backgroundWorker1.CancelAsync();
+        }
+        private void backgroundWorker1_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            // First, handle the case where an exception was thrown.
+            if (e.Error != null)
+            {
+                MessageBox.Show(e.Error.Message);
+            }
+            backgroundWorker1.CancelAsync();
+        }
+
         private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
         {
-            //Clear the rich text box
-            richTextBox1.Clear();
+
         }
+
+        //private void comboBox1_SelectedIndexChanged(object sender, EventArgs e)
+        //{
+        //    //Clear the rich text box
+        //    richTextBox1.Clear();
+        //}
     }
 }

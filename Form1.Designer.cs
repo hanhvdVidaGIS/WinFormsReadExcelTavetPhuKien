@@ -1,4 +1,6 @@
-﻿namespace WinFormsReadExcelTavetPhuKien
+﻿using System.ComponentModel;
+
+namespace WinFormsReadExcelTavetPhuKien
 {
     partial class Form1
     {
@@ -39,10 +41,12 @@
         /// </summary>
         private void InitializeComponent()
         {
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
+            ComponentResourceManager resources = new ComponentResourceManager(typeof(Form1));
             button1 = new Button();
             richTextBox1 = new RichTextBox();
             comboBox1 = new ComboBox();
+            progressBar1 = new ProgressBar();
+            backgroundWorker1 = new BackgroundWorker();
             SuspendLayout();
             // 
             // button1
@@ -51,7 +55,7 @@
             button1.BackColor = Color.Fuchsia;
             button1.FlatStyle = FlatStyle.Flat;
             button1.Font = new Font("Times New Roman", 14.25F, FontStyle.Bold, GraphicsUnit.Point);
-            button1.Location = new Point(544, 127);
+            button1.Location = new Point(521, 72);
             button1.Name = "button1";
             button1.Size = new Size(186, 35);
             button1.TabIndex = 0;
@@ -61,10 +65,11 @@
             // 
             // richTextBox1
             // 
+            richTextBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             richTextBox1.BackColor = SystemColors.ScrollBar;
             richTextBox1.Location = new Point(70, 243);
             richTextBox1.Name = "richTextBox1";
-            richTextBox1.Size = new Size(1178, 151);
+            richTextBox1.Size = new Size(1090, 151);
             richTextBox1.TabIndex = 1;
             richTextBox1.Text = "";
             // 
@@ -77,18 +82,35 @@
             comboBox1.FormattingEnabled = true;
             comboBox1.IntegralHeight = false;
             comboBox1.ItemHeight = 15;
-            comboBox1.Location = new Point(544, 75);
+            comboBox1.Location = new Point(521, 25);
             comboBox1.Name = "comboBox1";
             comboBox1.Size = new Size(186, 23);
             comboBox1.TabIndex = 2;
+            comboBox1.Visible = false;
             comboBox1.SelectedIndexChanged += comboBox1_SelectedIndexChanged;
+            // 
+            // progressBar1
+            // 
+            progressBar1.Location = new Point(70, 206);
+            progressBar1.Name = "progressBar1";
+            progressBar1.Size = new Size(1090, 23);
+            progressBar1.TabIndex = 3;
+            // 
+            // backgroundWorker1
+            // 
+            backgroundWorker1.WorkerReportsProgress = true;
+            backgroundWorker1.WorkerSupportsCancellation = true;
+            backgroundWorker1.DoWork += backgroundWorker1_DoWork;
+            backgroundWorker1.ProgressChanged += backgroundWorker1_ProgressChanged;
+            backgroundWorker1.RunWorkerCompleted += backgroundWorker1_RunWorkerCompleted;
             // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             BackColor = Color.Purple;
-            ClientSize = new Size(1326, 450);
+            ClientSize = new Size(1229, 450);
+            Controls.Add(progressBar1);
             Controls.Add(comboBox1);
             Controls.Add(richTextBox1);
             Controls.Add(button1);
@@ -106,5 +128,7 @@
         private Button button1;
         private RichTextBox richTextBox1;
         private ComboBox comboBox1;
+        private ProgressBar progressBar1;
+        private System.ComponentModel.BackgroundWorker backgroundWorker1;
     }
 }
